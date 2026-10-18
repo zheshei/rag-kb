@@ -53,26 +53,13 @@
         <div class="msg-list" ref="listRef">
           <div v-if="messages.length === 0" class="empty">
             <div class="empty-title">{{ currentId ? '该会话暂无消息' : '电商商品知识库问答' }}</div>
-            <div class="empty-tip">{{ currentId ? '输入问题开始对话，问答与引用会自动保存到本会话' : '例如：无线蓝牙耳机续航多久？智能手表支持哪些运动模式？' }}</div>
+            <div class="empty-tip">{{ currentId ? '输入问题开始对话，问答会自动保存到本会话' : '例如：无线蓝牙耳机续航多久？智能手表支持哪些运动模式？' }}</div>
           </div>
 
           <div v-for="(m, i) in messages" :key="i" class="msg-row" :class="m.role">
             <div class="msg-bubble">
               <div class="msg-role">{{ m.role === 'user' ? '我' : '助手' }}</div>
               <div class="msg-text" :class="{ loading: m.loading }">{{ m.text || (m.loading ? '思考中…' : '') }}</div>
-
-              <!-- 引用片段 -->
-              <div v-if="m.role === 'assistant' && m.refs && m.refs.length" class="refs">
-                <div class="refs-title">📎 知识库引用（{{ m.refs.length }}）</div>
-                <el-collapse>
-                  <el-collapse-item v-for="r in m.refs" :key="r.index" :name="r.index">
-                    <template #title>
-                      <span class="ref-title">[{{ r.index }}] {{ r.filename || '知识库片段' }} · 片段 {{ r.index }}</span>
-                    </template>
-                    <div class="ref-text">{{ r.text }}</div>
-                  </el-collapse-item>
-                </el-collapse>
-              </div>
             </div>
           </div>
         </div>
@@ -89,11 +76,6 @@
             @keydown.enter.exact.prevent="onSend"
           />
           <div class="input-actions">
-            <span class="tip">引用片段数：
-              <el-select v-model="topK" size="small" style="width: 80px" :disabled="sending">
-                <el-option v-for="n in [3, 5, 8]" :key="n" :value="n" :label="`${n} 条`" />
-              </el-select>
-            </span>
             <el-button type="primary" :loading="sending" :disabled="!question.trim()" @click="onSend">
               发送
             </el-button>
@@ -115,7 +97,7 @@ import { useAuthStore } from '../stores/auth'
 const auth = useAuthStore()
 const messages = ref([])
 const question = ref('')
-const topK = ref(5)
+const topK = 5
 const sending = ref(false)
 const listRef = ref(null)
 const conversations = ref([])
@@ -170,7 +152,6 @@ async function onSelectConversation(c) {
     messages.value = msgs.map((m) => ({
       role: m.role,
       text: m.content,
-      refs: m.refs || [],
       loading: false
     }))
   } catch (e) {
@@ -232,7 +213,7 @@ async function onSend() {
   if (!q || sending.value) return
 
   messages.value.push({ role: 'user', text: q })
-  const assistant = reactive({ role: 'assistant', text: '', refs: [], loading: true })
+  const assistant = reactive({ role: 'assistant', text: '', loading: true })
   messages.value.push(assistant)
   question.value = ''
   sending.value = true
@@ -241,7 +222,6 @@ async function onSend() {
   try {
     await askStream(q, topK.value, currentId.value, async (event, data) => {
       if (event === 'meta') {
-        assistant.refs = data.chunks || []
         if (data.conversation_id && currentId.value !== data.conversation_id) {
           currentId.value = data.conversation_id
           await loadConversations()
@@ -420,31 +400,6 @@ onMounted(async () => {
 @keyframes blink {
   50% { opacity: 0; }
 }
-.refs {
-  margin-top: 10px;
-  border-top: 1px dashed #dcdfe6;
-  padding-top: 8px;
-}
-.refs-title {
-  font-size: 12px;
-  color: #409eff;
-  margin-bottom: 6px;
-}
-.ref-title {
-  font-size: 12px;
-  color: #606266;
-}
-.ref-text {
-  font-size: 12px;
-  color: #606266;
-  line-height: 1.6;
-  white-space: pre-wrap;
-  background: #fafafa;
-  padding: 8px;
-  border-radius: 6px;
-  max-height: 160px;
-  overflow-y: auto;
-}
 .input-area {
   margin-top: 12px;
   background: #fff;
@@ -455,11 +410,7 @@ onMounted(async () => {
 .input-actions {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   margin-top: 8px;
-}
-.input-actions .tip {
-  font-size: 13px;
-  color: #606266;
 }
 </style>
