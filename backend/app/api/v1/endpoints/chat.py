@@ -66,16 +66,21 @@ async def ask(data: AskRequest, user: User = Depends(get_current_user), db: Sess
         for i, c in enumerate(chunks)
     ]
 
+    # 提前提取纯标量，避免在流式生成器（请求 session 已关闭）中访问 ORM 对象
+    user_id = user.id
+    conv_id = conv.id
+    conv_title = conv.title
+
     async def gen():
-        yield _sse("meta", {"chunks": refs, "conversation_id": conv.id, "title": conv.title})
+        yield _sse("meta", {"chunks": refs, "conversation_id": conv_id, "title": conv_title})
         answer_parts: list[str] = []
         try:
             async for text in stream_answer(data.question, chunks):
                 answer_parts.append(text)
                 yield _sse("delta", {"text": text})
             yield _sse("done", {})
-            # 流式结束后落库：用户问题 + 助手回答 + 引用
-            _persist(db=None, user_id=user.id, conv_id=conv.id, question=data.question, answer="".join(answer_parts), refs=refs)
+            # 流式结束后落库：用户问题 + 助手回答 + 引用（独立会话，不依赖请求 session）
+            _persist(user_id=user_id, conv_id=conv_id, question=data.question, answer="".join(answer_parts), refs=refs)
         except Exception as e:  # LLM 调用失败等，向前端给出明确错误
             yield _sse("error", {"message": f"回答生成失败：{str(e)[:200]}"})
 
@@ -86,7 +91,7 @@ async def ask(data: AskRequest, user: User = Depends(get_current_user), db: Sess
     )
 
 
-def _persist(db, user_id: int, conv_id: int, question: str, answer: str, refs: list[dict]) -> None:
+def _persist(user_id: int, conv_id: int, question: str, answer: str, refs: list[dict]) -> None:
     """独立会话保存问答与引用；失败不影响已返回的流式内容。"""
     session = SessionLocal()
     try:

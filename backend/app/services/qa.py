@@ -2,19 +2,20 @@
 from app.services.llm import get_chat_llm
 
 SYSTEM_PROMPT = (
-    "你是电商平台商品知识库问答助手。请严格基于【知识库内容】回答问题，"
-    "不要编造知识库中不存在的信息；回答中引用对应片段时用 [编号] 标注（如 [1]、[2]）。"
-    "如果知识库内容不足以回答，请如实说明。回答使用简体中文，条理清晰。"
+    "你是电商平台商品问答助手。请依据下方【资料】回答用户关于商品的问题，"
+    "不要编造资料中不存在的信息；直接、自然地给出答案，回答中不要出现"
+    "『根据知识库』『引用』『依据资料』等说明性字样；"
+    "如果资料不足以回答，请如实说明。回答使用简体中文，条理清晰。"
 )
 
 
 def build_messages(question: str, chunks: list[dict]) -> list[dict]:
-    """组装带编号引用的对话消息。"""
+    """组装对话消息：检索片段（带编号）作为资料，问题作为用户输入。"""
     context = "\n\n".join(f"[{i + 1}] {c['content']}" for i, c in enumerate(chunks))
     user = (
-        f"【知识库内容】\n{context}\n\n"
+        f"【资料】\n{context}\n\n"
         f"【问题】\n{question}\n\n"
-        "请结合知识库内容回答问题，并在引用处标注对应编号。"
+        "请回答问题。"
     )
     return [
         {"role": "system", "content": SYSTEM_PROMPT},

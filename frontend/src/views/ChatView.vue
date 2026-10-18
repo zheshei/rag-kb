@@ -2,10 +2,18 @@
   <el-container class="chat-page">
     <el-header class="chat-header">
       <span class="logo">💬 知识库问答</span>
-      <el-tag size="small" type="info" effect="plain" class="kb-tag">知识库：{{ kbName }}</el-tag>
-      <div class="header-right">
-        <el-button link @click="$router.push('/')">返回首页</el-button>
-      </div>
+      <el-dropdown @command="onHeaderCommand">
+        <span class="user-chip">
+          {{ auth.user?.username }}
+          <el-icon><ArrowDown /></el-icon>
+        </span>
+        <template #dropdown>
+          <el-dropdown-menu>
+            <el-dropdown-item command="home">返回首页</el-dropdown-item>
+            <el-dropdown-item divided command="logout">退出登录</el-dropdown-item>
+          </el-dropdown-menu>
+        </template>
+      </el-dropdown>
     </el-header>
 
     <el-container class="chat-body">
@@ -98,19 +106,30 @@
 <script setup>
 import { nextTick, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { ArrowDown } from '@element-plus/icons-vue'
 import { askStream } from '../api/chat'
-import { getStats } from '../api/kb'
 import { listConversations, createConversation, renameConversation, deleteConversation, getMessages } from '../api/conversation'
+import { useAuthStore } from '../stores/auth'
 
+const auth = useAuthStore()
 const messages = ref([])
 const question = ref('')
 const topK = ref(5)
 const sending = ref(false)
 const listRef = ref(null)
-const kbName = ref('默认商品知识库')
 const conversations = ref([])
 const loadingConvs = ref(false)
 const currentId = ref(null)
+
+function onHeaderCommand(cmd) {
+  if (cmd === 'logout') {
+    auth.logout()
+    ElMessage.success('已退出登录')
+    window.location.href = '/login'
+  } else if (cmd === 'home') {
+    window.location.href = '/'
+  }
+}
 
 function scrollBottom() {
   nextTick(() => {
@@ -245,10 +264,6 @@ async function onSend() {
 }
 
 onMounted(async () => {
-  try {
-    const s = await getStats()
-    kbName.value = s.kb_name
-  } catch (e) { /* 忽略 */ }
   await loadConversations()
   if (conversations.value.length > 0) {
     await onSelectConversation(conversations.value[0])
@@ -272,8 +287,14 @@ onMounted(async () => {
   font-weight: 700;
   color: #409eff;
 }
-.header-right {
-  margin-left: auto;
+.user-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  color: #606266;
+  font-size: 14px;
+  outline: none;
 }
 .chat-body {
   height: calc(100vh - 60px);
