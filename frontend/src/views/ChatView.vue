@@ -9,7 +9,8 @@
         </span>
         <template #dropdown>
           <el-dropdown-menu>
-            <el-dropdown-item command="home">返回首页</el-dropdown-item>
+            <el-dropdown-item v-if="auth.isAdmin" command="kb">知识库管理</el-dropdown-item>
+            <el-dropdown-item command="profile">修改密码</el-dropdown-item>
             <el-dropdown-item divided command="logout">退出登录</el-dropdown-item>
           </el-dropdown-menu>
         </template>
@@ -51,8 +52,8 @@
       <el-main class="chat-main">
         <div class="msg-list" ref="listRef">
           <div v-if="messages.length === 0" class="empty">
-            <div class="empty-title">电商商品知识库问答</div>
-            <div class="empty-tip">例如：无线蓝牙耳机续航多久？智能手表支持哪些运动模式？</div>
+            <div class="empty-title">{{ currentId ? '该会话暂无消息' : '电商商品知识库问答' }}</div>
+            <div class="empty-tip">{{ currentId ? '输入问题开始对话，问答与引用会自动保存到本会话' : '例如：无线蓝牙耳机续航多久？智能手表支持哪些运动模式？' }}</div>
           </div>
 
           <div v-for="(m, i) in messages" :key="i" class="msg-row" :class="m.role">
@@ -126,8 +127,10 @@ function onHeaderCommand(cmd) {
     auth.logout()
     ElMessage.success('已退出登录')
     window.location.href = '/login'
-  } else if (cmd === 'home') {
-    window.location.href = '/'
+  } else if (cmd === 'kb') {
+    window.location.href = '/kb'
+  } else if (cmd === 'profile') {
+    window.location.href = '/profile'
   }
 }
 
