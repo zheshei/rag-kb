@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.db
+
+# 前端
+node_modules/
+dist/
+
+# 运行数据（上传文件/向量库/业务库）
+backend/data/
+!backend/data/sample_products.txt
+
+# 密钥与环境
+backend/.env
+
+# 系统
+.DS_Store
+Thumbs.db
