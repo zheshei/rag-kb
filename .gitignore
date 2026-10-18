@@ -18,3 +18,6 @@ backend/.env
 # 系统
 .DS_Store
 Thumbs.db
+
+# 门禁通行证（git-save 临时标记，不入库）
+.gate/
