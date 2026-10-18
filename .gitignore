@@ -3,6 +3,8 @@ __pycache__/
 *.py[cod]
 .venv/
 *.db
+*.db-shm
+*.db-wal
 
 # 前端
 node_modules/

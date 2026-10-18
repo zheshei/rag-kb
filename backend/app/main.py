@@ -1,6 +1,8 @@
 """FastAPI 应用入口：中间件、启动初始化（建表 + 种子管理员）。"""
 import time
+from contextlib import asynccontextmanager
 
+import anyio
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
@@ -14,7 +16,19 @@ from app.db.session import SessionLocal, engine
 
 settings = get_settings()
 
-app = FastAPI(title=settings.APP_NAME, version="1.0.0", docs_url="/api/docs", openapi_url="/api/openapi.json")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # M5 性能优化：扩容 FastAPI 默认线程池（默认 40）。
+    # 100 并发下 sync 端点（含 Depends 依赖）会在线程池往返 2 次，
+    # 40 线程深度排队导致请求 30 秒超时；扩容到 200 支撑百级并发。
+    limiter = anyio.to_thread.current_default_thread_limiter()
+    limiter.total_tokens = 200
+    yield
+
+
+app = FastAPI(title=settings.APP_NAME, version="1.0.0", docs_url="/api/docs",
+              openapi_url="/api/openapi.json", lifespan=lifespan)
 
 # M5 性能优化：GZip 压缩响应
 app.add_middleware(GZipMiddleware, minimum_size=1024)

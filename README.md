@@ -118,6 +118,14 @@ cd backend
 - **后台异步入库**：文档解析与向量化不阻塞上传请求
 - **前端分包**：vue / element-plus 独立 vendor chunk
 - **分页**：文档列表与会话列表均分页
+- **SQLite 并发优化**：WAL 日志模式（读写并行）+ busy_timeout=30s + 连接池扩容（size 20 / overflow 40）
+- **FastAPI 线程池扩容**：默认 40 线程 → 200（sync 端点含依赖注入在 100 并发下需 2 次线程池往返，默认容量会深度排队超时）
+- **100 并发压测结果**（`python tools/stress_test.py --run 100 --ask 10`，单机 Windows + SQLite）：
+  - 登录 / 读会话+消息：100 并发 0 错误，P95 ≤ 4.3s
+  - 混合循环读（150 请求）：0 错误，P50 514ms
+  - 真实问答（10 并发，阿里云 qwen-plus）：0 错误，平均 4.4s
+
+压测中发现并修复的三级瓶颈：① SQLAlchemy 默认连接池仅 15 连接 → 扩容 + WAL；② 并发建连执行 `PRAGMA journal_mode=WAL` 争夺文件锁卡满连接池 → 改为启动期一次性设置；③ FastAPI 默认线程池 40 → 200。
 
 ## 部署说明
 
