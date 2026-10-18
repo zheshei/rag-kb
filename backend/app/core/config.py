@@ -36,7 +36,12 @@ class Settings(BaseSettings):
     ZHIPU_BASE_URL: str = "https://open.bigmodel.cn/api/paas/v4"
     ZHIPU_MODEL: str = "glm-4-flash"
 
-    # LLM 提供方：zhipu（智谱，默认）/ ollama（本地备选，OpenAI 兼容）
+    # 阿里云百炼（OpenAI 兼容端点）
+    ALIYUN_API_KEY: str = ""
+    ALIYUN_BASE_URL: str = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+    ALIYUN_MODEL: str = "qwen-plus"
+
+    # LLM 提供方：aliyun（阿里云百炼）/ zhipu（智谱）/ ollama（本地备选，OpenAI 兼容）
     LLM_PROVIDER: str = "zhipu"
     OLLAMA_BASE_URL: str = "http://localhost:11434/v1"
     OLLAMA_MODEL: str = "qwen2.5:7b"

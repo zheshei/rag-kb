@@ -18,6 +18,14 @@ def get_chat_llm() -> ChatOpenAI:
             base_url=settings.OLLAMA_BASE_URL,
             **common,
         )
+    if settings.LLM_PROVIDER == "aliyun":
+        # 阿里云百炼（OpenAI 兼容）
+        return ChatOpenAI(
+            model=settings.ALIYUN_MODEL,
+            api_key=settings.ALIYUN_API_KEY,
+            base_url=settings.ALIYUN_BASE_URL,
+            **common,
+        )
     # 默认智谱（OpenAI 兼容）
     return ChatOpenAI(
         model=settings.ZHIPU_MODEL,

@@ -8,7 +8,7 @@
 | --- | --- |
 | 认证 | 注册 / 登录 / 修改密码 / 当前用户；JWT + bcrypt；角色 admin / user |
 | 知识库管理（仅 admin） | 文档上传（PDF / Word / TXT / MD，≤50MB）→ LangChain 解析 → 父子分块 → BGE 向量化 → Chroma 入库；列表 / 分页 / 删除 / 统计 |
-| 知识库问答 | 混合检索（Chroma 向量 + BM25 关键词 + RRF 融合，可选 Rerank）→ 智谱 GLM 流式输出（SSE）→ **引用片段展示** |
+| 知识库问答 | 混合检索（Chroma 向量 + BM25 关键词 + RRF 融合，可选 Rerank）→ 云端大模型流式输出（SSE，默认阿里云百炼 Qwen）→ **引用片段展示** |
 | 多用户多会话（M4） | 每用户独立会话：创建 / 列表 / 重命名 / 删除；问答与引用自动落库，跨时段找回历史对话；会话级用户隔离 |
 | 性能优化（M5） | 检索结果 TTL 缓存（知识库版本自动失效）、embedding 查询缓存、GZip 压缩、请求耗时监控、前端 vendor 分包、文档/会话分页、后台异步入库 |
 | 管理员看板（M6） | 用户 / 文档 / 分块 / 会话 / 消息 / 向量库统计 + 最近文档列表 |
@@ -16,7 +16,7 @@
 ## 技术栈
 
 - **后端**：FastAPI + SQLAlchemy + SQLite + Chroma（向量库）+ fastembed（本地 BGE-small-zh-v1.5，CPU 推理）
-- **LLM**：智谱 GLM-4-Flash（OpenAI 兼容端点，长期免费；可切换 Ollama 本地模型）
+- **LLM**：阿里云百炼 Qwen（OpenAI 兼容端点，默认）/ 智谱 GLM-4-Flash / Ollama 本地，配置一键切换
 - **检索**：LangChain 加载器 / 文本分割器 + jieba BM25 + RRF 融合 + fastembed Rerank（可选）
 - **前端**：Vue3 + Element Plus + Pinia + Vue Router + Vite
 - **测试**：pytest（63 个用例：正常 / 边界 / 异常三类）
@@ -38,7 +38,7 @@ RAG/
 │   │   └── services/          # embedding / vectorstore / ingestion / llm / retrieval / qa / cache
 │   ├── tests/                 # pytest 单元测试（63 个用例）
 │   ├── requirements.txt
-│   └── .env                   # 智谱 API Key 等配置
+│   └── .env                   # LLM 提供方 / API Key 等配置
 ├── frontend/                  # Vue3 前端（6 个页面 + 会话侧栏）
 └── docs/设计文档.md            # 毕设设计文档
 ```
@@ -61,7 +61,8 @@ npm install --registry=https://registry.npmmirror.com
 > 说明：
 > - Embedding 模型（BGE-small-zh-v1.5）首次使用自动下载，默认走 hf-mirror 国内镜像
 > - 向量库 Chroma 无需外部服务，数据持久化在 `backend/data/`
-> - 若使用智谱 GLM：把 API Key 填入 `backend/.env` 的 `ZHIPU_API_KEY` 后重启后端
+> - **默认使用阿里云百炼**（模型 qwen-plus）：把 API Key 填入 `backend/.env` 的 `ALIYUN_API_KEY` 后重启后端
+> - 也可在 `backend/.env` 切换 `LLM_PROVIDER=zhipu`（填 `ZHIPU_API_KEY`）或 `ollama`（本地模型）
 
 ### 2. 启动（Windows）
 

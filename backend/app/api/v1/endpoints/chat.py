@@ -41,9 +41,15 @@ async def ask(data: AskRequest, user: User = Depends(get_current_user), db: Sess
         conv = conv_crud.create_conversation(db, user.id, title=_auto_title(data.question))
 
     settings = get_settings()
+    # 按当前 LLM 提供方检查 API Key 是否配置
+    key_env = None
     if settings.LLM_PROVIDER == "zhipu" and not settings.ZHIPU_API_KEY:
+        key_env = "ZHIPU_API_KEY"
+    elif settings.LLM_PROVIDER == "aliyun" and not settings.ALIYUN_API_KEY:
+        key_env = "ALIYUN_API_KEY"
+    if key_env:
         raise HTTPException(
-            400, "尚未配置智谱 API Key：请在 backend/.env 中设置 ZHIPU_API_KEY 后重启服务"
+            400, f"尚未配置 {key_env}：请在 backend/.env 中设置后重启服务"
         )
 
     chunks = retrieval.retrieve(data.question, top_k=data.top_k)
